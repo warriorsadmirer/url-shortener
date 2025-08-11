@@ -9,5 +9,5 @@ func main() {
 
 	// TODO: init router: chi, render
 
-	// TODO: run server:   
+	// TODO: run server
 }
