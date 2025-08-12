@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"time"
+	"github.com/ilyakaznacheev/cleanenv"
 )
 
 type Config struct {
@@ -18,7 +19,7 @@ type HTTPServer struct {
 	IdleTimeout time.Duration `yaml:"idle_timeout" env-default:"60s"`
 }
 
- func MustLoad() {
+ func MustLoad() *Config {
 	configPath := os.Getenv("CONFIG_PATH")
 	if configPath == "" {
 		 log.Fatal("Config path is not set ")
@@ -30,4 +31,10 @@ type HTTPServer struct {
 	}
 
 	var cfg Config 
- } 
+
+	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
+		log.Fatalf("Cannot read config: %s", err)
+	}
+
+	return &cfg
+ }
