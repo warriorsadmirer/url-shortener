@@ -2,3 +2,4 @@
 internal/.DS_Store
 vendor/
 /storage/storage.db
+config/local.yaml
