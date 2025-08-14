@@ -12,7 +12,7 @@ require (
 	github.com/go-chi/render v1.0.3
 	github.com/go-playground/validator/v10 v10.27.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
-	github.com/mattn/go-sqlite3 v1.14.30
+	github.com/mattn/go-sqlite3 v1.14.32
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/exp v0.0.0-20250808145144-a408d31f581a
 )
