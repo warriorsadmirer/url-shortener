@@ -2,9 +2,11 @@ package sqlite
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
-	"github.com/mattn/go-sqlite3"
 	"url-shortener/internal/storage"
+
+	"github.com/mattn/go-sqlite3"
 )
 
 type Storage struct {
@@ -45,7 +47,7 @@ func (s *Storage) SaveURL(urlToSave string, alias string) (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
-
+	defer stmt.Close()
 	res, err := stmt.Exec(urlToSave, alias)
 	if err != nil {
 		if sqliteErr, ok := err.(sqlite3.Error); ok && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
@@ -61,4 +63,46 @@ func (s *Storage) SaveURL(urlToSave string, alias string) (int64, error) {
 	}
 
 	return id, nil
+}
+
+func (s *Storage) GetURL(alias string) (string, error) {
+	const op = "storage.sqlite.GetURL"
+
+	stmt, err := s.db.Prepare("SELECT alias, url FROM url WHERE alias = ?")
+	if err != nil {
+		return "", fmt.Errorf("%s: prepare statement: %w", op, err)
+	}
+	defer stmt.Close()
+
+	var resURL string
+
+	err = stmt.QueryRow(alias).Scan(&resURL)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", storage.ErrURLNotFound
+		}
+		return "", fmt.Errorf("%s: execute not found:  %w", op, err)
+	}
+
+	return resURL, nil
+}
+
+func (s *Storage) DeleteURL(alias string) error {
+	const op = "storage.sqlite.DeleteURL"
+
+	stmt, err := s.db.Prepare("DELETE FROM url WHERE alias = ?")
+	if err != nil {
+		return fmt.Errorf("%s: prepare statement: %w", op, err)
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(alias)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return storage.ErrURLNotFound
+		}
+		return fmt.Errorf("%s: execute not found: %w", op, err)
+	}
+
+	return nil
 }
