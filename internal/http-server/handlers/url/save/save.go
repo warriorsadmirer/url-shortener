@@ -24,18 +24,18 @@ type Response struct {
 	Alias string `json:"alias,omitempty"`
 }
 
+// TODO: move to config if needed
+const aliasLength = 7
+
 type URLSaver interface {
 	SaveURL(urlToSave string, alias string) (int64, error)
 }
 
-// TODO: move to config
-const aliasLength = 7
-
 func New(log *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		const op = "handler.save.url.New"
+		const op = "handlers.url.save.New"
 
-		log = log.With(
+		log := log.With(
 			slog.String("op", op),
 			slog.String("request_id", middleware.GetReqID(r.Context())),
 		)
@@ -44,7 +44,7 @@ func New(log *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
 
 		err := render.DecodeJSON(r.Body, &req)
 		if err != nil {
-			log.Error("failed to decode request", sl.Err(err))
+			log.Error("failed to decode request body", sl.Err(err))
 
 			render.JSON(w, r, resp.Error("failed to decode request"))
 
@@ -54,11 +54,11 @@ func New(log *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
 		log.Info("request body decoded", slog.Any("request", req))
 
 		if err := validator.New().Struct(req); err != nil {
-			validationErr := err.(validator.ValidationErrors)
-			log.Error("failed to validate request", sl.Err(err))
+			validateErr := err.(validator.ValidationErrors)
 
-			render.JSON(w, r, resp.Error("failed to validate request"))
-			render.JSON(w, r, resp.ValidationError(validationErr))
+			log.Error("invalid request", sl.Err(err))
+
+			render.JSON(w, r, resp.ValidationError(validateErr))
 
 			return
 		}
@@ -70,24 +70,23 @@ func New(log *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
 
 		id, err := urlSaver.SaveURL(req.URL, alias)
 		if errors.Is(err, storage.ErrURLExists) {
-			log.Info("URL already exists", slog.String("url", req.URL))
+			log.Info("url already exists", slog.String("url", req.URL))
 
-			render.JSON(w, r, resp.Error("URL already exists"))
+			render.JSON(w, r, resp.Error("url already exists"))
 
 			return
 		}
 		if err != nil {
-			log.Error("failed to save URL", sl.Err(err))
+			log.Error("failed to add url", sl.Err(err))
 
-			render.JSON(w, r, resp.Error("failed to save URL"))
+			render.JSON(w, r, resp.Error("failed to add url"))
 
 			return
 		}
 
-		log.Info("URL added", slog.Int64("id", id))
+		log.Info("url added", slog.Int64("id", id))
 
 		responseOK(w, r, alias)
-
 	}
 }
 
