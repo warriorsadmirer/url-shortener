@@ -27,6 +27,8 @@ type Response struct {
 // TODO: move to config if needed
 const aliasLength = 7
 
+//go:generate go run github.com/vektra/mockery/v2@v2.53.5 --name=URLSaver
+
 type URLSaver interface {
 	SaveURL(urlToSave string, alias string) (int64, error)
 }
@@ -41,7 +43,6 @@ func New(log *slog.Logger, urlSaver URLSaver) http.HandlerFunc {
 		)
 
 		var req Request
-
 		err := render.DecodeJSON(r.Body, &req)
 		if err != nil {
 			log.Error("failed to decode request body", sl.Err(err))
