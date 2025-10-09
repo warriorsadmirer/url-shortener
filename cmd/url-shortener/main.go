@@ -5,13 +5,14 @@ import (
 	"os"
 	"url-shortener/internal/http-server/handlers/url/save"
 	mwLogger "url-shortener/internal/http-server/middleware/logger"
+	"url-shortener/internal/lib/logger/handlers/slogpretty"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"golang.org/x/exp/slog"
 
 	"url-shortener/internal/config"
-	"url-shortener/internal/lib/logger/handlers/slogpretty"
+
 	"url-shortener/internal/lib/logger/sl"
 	"url-shortener/internal/storage/sqlite"
 )
@@ -28,7 +29,11 @@ func main() {
 
 	log := setupLogger(cfg.Env)
 
-	log.Info("starting url shortener", slog.String("env", cfg.Env))
+	log.Info(
+		"starting url shortener",
+		slog.String("env", cfg.Env),
+		slog.String("version", "123"),
+	)
 	log.Debug("debug messages are enabled")
 
 	storage, err := sqlite.New(cfg.StoragePath)
